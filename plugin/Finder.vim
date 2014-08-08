@@ -68,12 +68,15 @@ def _getFindFileArgs():
 	if not args:
 		return (None, None)
 	parser = optparse.OptionParser()
-	caseSensetive = False
 	parser.add_option("-b", dest = "onlyfindInBufferList", action = "store_true", help = "just find in current BufferList")
 	parser.add_option("-c", dest = "caseSensetive", action = "store_true", help = "Case sensetive")
+	parser.add_option("-e", dest = "exact", action = "store_true", help = "Exact regex, no leading or trainign characters")
 	(options, args) = parser.parse_args(args.split())
 	try:
-		pattern = args[0]
+		if options.exact:
+			pattern = args[0]
+		else:
+			pattern = ".*%s.*" % (args[0])
 	except:
 		#just list all buffers if no pattern
 		if options.onlyfindInBufferList:
