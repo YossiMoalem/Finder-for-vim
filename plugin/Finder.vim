@@ -15,10 +15,13 @@
 "		     press <Space> 's behavior is same with <Enter> But keep the
 "		     output window.
 
-
-"Settings:
-let g:paths="/Users/ic/codes/:/Users/ic/demos:/Users/ic/.vim"
-let g:pathsSep=":"
+"default
+if exists("pathSeperator") == 0
+	let g:pathSeperator=":"
+endif
+if exists("paths") == 0
+	let g:paths=""
+endif
 
 "Maps:
 map <C-f> :py findFile()<CR>
@@ -37,21 +40,37 @@ if scriptdir not in sys.path:
 import MyFinder
 import VimUi
 
-#vim.command("map <C-f> :py findFile()<CR>")
-
-#TODO:check if these vars exists
+pathSeperator = vim.eval('g:pathSeperator') 
 paths = vim.eval('g:paths')
-pathsSep = vim.eval('g:pathsSep')
-paths = paths.split(pathsSep)
+if len(paths) == 0 :
+	print ("Root path is not set. Please set it in your .vimrc (example: let g:paths=/home/lala/dir1%s/home/lala/dir2/dir3)" % (pathSeperator))	
+else:
+	paths = paths.split(pathSeperator)
 
 fileFinder = MyFinder.FileFinder(paths)
 
-def getFindFileArgs():
+def findFile():
+	(patternRegex, onlyfindInBufferList) = _getFindFileArgs()
+	results = []
+	if patternRegex:
+		results.extend( fileFinder.searchInBufferList(patternRegex))
+		if not onlyfindInBufferList:
+			results.extend(fileFinder.search(patternRegex))
+		if results:
+			#make it unique
+			results =list(set(results))
+			VimUi.showResults("findResults", results, "findFileHandler")
+		else:
+			vim.command('echo "So Sorry, cannot Find it :("')
+
+def _getFindFileArgs():
 	args = vim.eval('input("file pattern: ")')
 	if not args:
 		return (None, None)
 	parser = optparse.OptionParser()
+	caseSensetive = False
 	parser.add_option("-b", dest = "onlyfindInBufferList", action = "store_true", help = "just find in current BufferList")
+	parser.add_option("-c", dest = "caseSensetive", action = "store_true", help = "Case sensetive")
 	(options, args) = parser.parse_args(args.split())
 	try:
 		pattern = args[0]
@@ -60,25 +79,15 @@ def getFindFileArgs():
 		if options.onlyfindInBufferList:
 			pattern = ".*"
 	try:
-		pattern = re.compile(pattern, re.IGNORECASE)
+		if options.caseSensetive:
+			patternRegex = re.compile(pattern)
+		else:
+			patternRegex = re.compile(pattern, re.IGNORECASE)
 	except:
 		print "Sorry, Can not understand it :("
 		return (None, None)
-	return (options.onlyfindInBufferList, pattern)
+	return (patternRegex, options.onlyfindInBufferList)
 
-def findFile():
-	(onlyfindInBufferList, pattern) = getFindFileArgs()
-	results = []
-	if pattern:
-		results.extend( fileFinder.searchInBufferList(pattern))
-		if not onlyfindInBufferList:
-			results.extend(fileFinder.search(pattern))
-		if results:
-			#make it unique
-			results =list(set(results))
-			VimUi.showResults("findResults", results, "findFileHandler")
-		else:
-			vim.command('echo "So Sorry, cannot Find it :("')
 
 def findFileHandler(line):
 	filePath = line
