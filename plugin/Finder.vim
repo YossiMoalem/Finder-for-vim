@@ -65,7 +65,9 @@ def findFile():
 			vim.command('echo "So Sorry, cannot Find it :("')
 
 def _getFindFileArgs():
+	vim.command('call inputsave()')
 	args = vim.eval('input("file pattern: ")')
+	vim.command('call inputrestore()')
 	pattern = None
 	if not args:
 		return (None, None, None, None)
