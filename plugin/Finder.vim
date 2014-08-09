@@ -66,8 +66,9 @@ def findFile():
 
 def _getFindFileArgs():
 	args = vim.eval('input("file pattern: ")')
+	pattern = None
 	if not args:
-		return (None, None)
+		return (None, None, None, None)
 	parser = optparse.OptionParser()
 	parser.add_option("-b", dest = "onlyfindInBufferList", action = "store_true", help = "just find in current BufferList")
 	parser.add_option("-c", dest = "caseSensetive", action = "store_true", help = "Case sensetive")
@@ -97,7 +98,7 @@ def _getFindFileArgs():
 				pattern = re.compile(pattern, re.IGNORECASE)
 		except:
 			print "Sorry, Can not understand this regular expression :("
-			return (None, None)
+			pattern = None
 	else:
 			if options.caseSensetive:
 				matchingFunction = shellMatch(caseSensetive = True)
