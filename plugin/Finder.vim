@@ -51,12 +51,12 @@ else:
 fileFinder = MyFinder.FileFinder(paths)
 
 def findFile():
-	(pattern, onlyfindInBufferList, matchingFunction) = _getFindFileArgs()
+	(pattern, onlyfindInBufferList, matchingFunction, nameOnly) = _getFindFileArgs()
 	results = []
 	if pattern:
-		results.extend( fileFinder.searchInBufferList(pattern, matchingFunction))
+		results.extend( fileFinder.searchInBufferList(pattern, matchingFunction, nameOnly))
 		if not onlyfindInBufferList:
-			results.extend(fileFinder.search(pattern, matchingFunction))
+			results.extend(fileFinder.search(pattern, matchingFunction, nameOnly))
 		if results:
 			#make it unique
 			results =list(set(results))
@@ -73,6 +73,7 @@ def _getFindFileArgs():
 	parser.add_option("-c", dest = "caseSensetive", action = "store_true", help = "Case sensetive")
 	parser.add_option("-e", dest = "exact", action = "store_true", help = "Exact regex, no leading or trainign characters")
 	parser.add_option("-r", dest = "useRegex", action = "store_true", help = "Use Regex")
+	parser.add_option("-n", dest = "nameOnly", action = "store_true", help = "Search in file name only")
 	(options, args) = parser.parse_args(args.split())
 	if options.useRegex:
 		matchAllPattern = ".*"
@@ -102,7 +103,7 @@ def _getFindFileArgs():
 				matchingFunction = shellMatch(caseSensetive = True)
 			else:
 				matchingFunction = shellMatch(caseSensetive = False)
-	return (pattern, options.onlyfindInBufferList, matchingFunction)
+	return (pattern, options.onlyfindInBufferList, matchingFunction, options.nameOnly)
 
 def regexMatch(pattern, string):
 	return pattern.match(string)
