@@ -31,6 +31,7 @@ import vim
 import os
 import sys
 import re
+import fnmatch
 import optparse
 
 scriptdir = os.path.dirname(vim.eval('expand("<sfile>")'))
@@ -50,12 +51,12 @@ else:
 fileFinder = MyFinder.FileFinder(paths)
 
 def findFile():
-	(patternRegex, onlyfindInBufferList) = _getFindFileArgs()
+	(pattern, onlyfindInBufferList, matchingFunction) = _getFindFileArgs()
 	results = []
-	if patternRegex:
-		results.extend( fileFinder.searchInBufferList(patternRegex))
+	if pattern:
+		results.extend( fileFinder.searchInBufferList(pattern, matchingFunction))
 		if not onlyfindInBufferList:
-			results.extend(fileFinder.search(patternRegex))
+			results.extend(fileFinder.search(pattern, matchingFunction))
 		if results:
 			#make it unique
 			results =list(set(results))
@@ -71,26 +72,46 @@ def _getFindFileArgs():
 	parser.add_option("-b", dest = "onlyfindInBufferList", action = "store_true", help = "just find in current BufferList")
 	parser.add_option("-c", dest = "caseSensetive", action = "store_true", help = "Case sensetive")
 	parser.add_option("-e", dest = "exact", action = "store_true", help = "Exact regex, no leading or trainign characters")
+	parser.add_option("-r", dest = "useRegex", action = "store_true", help = "Use Regex")
 	(options, args) = parser.parse_args(args.split())
+	if options.useRegex:
+		matchAllPattern = ".*"
+	else:
+		matchAllPattern = "*"
 	try:
 		if options.exact:
 			pattern = args[0]
 		else:
-			pattern = ".*%s.*" % (args[0])
+			pattern = "%s%s%s" % (matchAllPattern, args[0], matchAllPattern)
 	except:
 		#just list all buffers if no pattern
 		if options.onlyfindInBufferList:
-			pattern = ".*"
-	try:
-		if options.caseSensetive:
-			patternRegex = re.compile(pattern)
-		else:
-			patternRegex = re.compile(pattern, re.IGNORECASE)
-	except:
-		print "Sorry, Can not understand it :("
-		return (None, None)
-	return (patternRegex, options.onlyfindInBufferList)
+			pattern = matchAllPattern
+	if options.useRegex:
+		matchingFunction = regexMatch
+		try:
+			if options.caseSensetive:
+				pattern= re.compile(pattern)
+			else:
+				pattern = re.compile(pattern, re.IGNORECASE)
+		except:
+			print "Sorry, Can not understand this regular expression :("
+			return (None, None)
+	else:
+			if options.caseSensetive:
+				matchingFunction = shellMatch(caseSensetive = True)
+			else:
+				matchingFunction = shellMatch(caseSensetive = False)
+	return (pattern, options.onlyfindInBufferList, matchingFunction)
 
+def regexMatch(pattern, string):
+	return pattern.match(string)
+
+def shellMatch(caseSensetive):
+	if caseSensetive:
+		return lambda pattern, string: fnmatch.fnmatch(string, pattern)
+	else:
+		return lambda pattern, string: fnmatch.fnmatchcase(string, pattern)
 
 def findFileHandler(line):
 	filePath = line

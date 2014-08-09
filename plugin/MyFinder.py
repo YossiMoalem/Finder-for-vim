@@ -25,19 +25,19 @@ class FileFinder:
 					self.filePathCache.append(os.path.join(rootDir,filePath))
 		self.cacheLock.release()
 
-	def search(self, pattern):
+	def search(self, pattern, matchingFunction):
 		if self.filePathCache is None:
 			self.makeCache()
 		self.cacheLock.acquire()
-		results = [filePath for filePath in self.filePathCache if pattern.match(os.path.basename(filePath))]
+		results = [filePath for filePath in self.filePathCache if matchingFunction( pattern, os.path.basename(filePath))]
 		self.cacheLock.release()
 		return results
 
-	def searchInBufferList(self, pattern):
+	def searchInBufferList(self, pattern, matchingFunction):
 		results = []
 		for buf in vim.buffers:
 			if buf.name and os.path.exists(buf.name):
-				if pattern.match(os.path.basename(buf.name)):
+				if matchingFunction(pattern, os.path.basename(buf.name)):
 					results.append(buf.name)
 		return results
 
