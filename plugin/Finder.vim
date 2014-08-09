@@ -24,7 +24,7 @@ if exists("paths") == 0
 endif
 
 "Maps:
-map <C-f> :py findFile()<CR>
+map <C-e> :py findFile()<CR>
 
 python<<EOF
 import vim
